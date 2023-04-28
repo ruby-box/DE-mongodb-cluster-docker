@@ -1,0 +1,163 @@
+version: '2'
+services:
+  ## mongo router
+  mongos-01:
+    image: mongo:4.2.13  # dockerhub를 사용하는 경우 mongo:버전
+    hostname: mongos-01
+    container_name: mongos-01
+    command: mongos --port 27017 --configdb rs-config/mongoc-01:27017,mongoc-02:27017,mongoc-03:27017 --bind_ip_all
+    ports:
+      - 10717:27017 
+    # restart: always
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_mongos01_db:/data/db
+      - mongodb_cluster_mongos01_config:/data/configdb
+  mongos-02:
+    image: mongo:4.2.13  # dockerhub를 사용하는 경우 mongo:버전
+    hostname: mongos-02
+    container_name: mongos-02
+    command: mongos --port 27017 --configdb rs-config/mongoc-01:27017,mongoc-02:27017,mongoc-03:27017 --bind_ip_all
+    ports:
+      - 10718:27017
+    # restart: always
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_mongos02_db:/data/db
+      - mongodb_cluster_mongos02_config:/data/configdb
+  
+
+  ## mongo config
+  mongoc-01:
+    image: mongo:4.2.13
+    hostname: mongoc-01
+    container_name: mongoc-01
+    command: mongod --port 27017 --configsvr --replSet rs-config
+    ports:
+      - 30717:27017
+    # restart: always
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_mongoc01_db:/data/db
+      - mongodb_cluster_mongoc01_config:/data/configdb
+    links:
+      - mongod-01
+      - mongod-02
+      - mongod-03
+
+  mongoc-02:
+    image: mongo:4.2.13
+    hostname: mongoc-02
+    container_name: mongoc-02
+    command: mongod --port 27017 --configsvr --replSet rs-config
+    ports:
+      - 30718:27017
+    # restart: always
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_mongoc02_db:/data/db
+      - mongodb_cluster_mongoc02_config:/data/configdb
+    links:
+      - mongoc-01
+
+  mongoc-03:
+    image: mongo:4.2.13
+    hostname: mongoc-03
+    container_name: mongoc-03
+    command: mongod --port 27017 --configsvr --replSet rs-config
+    ports:
+      - 30719:27017
+    # restart: always
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_mongoc03_db:/data/db
+      - mongodb_cluster_mongoc03_config:/data/configdb
+    links:
+      - mongoc-02
+  
+  ## mongo datanode
+  mongod-01:
+    image: mongo:4.2.13
+    hostname: mongod-01
+    container_name: mongod-01
+    command: mongod --port 27017 --shardsvr --replSet sh1
+    ports:
+      - 27017:27017
+    # restart: always
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_mongod01_db:/data/db
+      - mongodb_cluster_mongod01_config:/data/configdb
+    links:
+      - mongod-02
+      - mongod-03
+
+  mongod-02:
+    image: mongo:4.2.13
+    hostname: mongod-02
+    container_name: mongod-02
+    command: mongod --port 27017 --shardsvr --replSet sh1
+    ports:
+      - 27018:27017
+    # restart: always
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_mongod02_db:/data/db
+      - mongodb_cluster_mongod02_config:/data/configdb
+
+  mongod-03:
+    image: mongo:4.2.13
+    hostname: mongod-03
+    container_name: mongod-03
+    command: mongod --port 27017 --shardsvr --replSet sh1
+    ports:
+      - 27019:27017
+    # restart: always
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_mongod03_db:/data/db
+      - mongodb_cluster_mongod03_config:/data/configdb
+  
+  # mongo-opsmanager:
+  #   image: datalake/mongo-mms
+  #   hostname: mongo-opsmanager
+  #   container_name:  mongo-opsmanager
+  #   links:
+  #     - mongos-01
+  #     - mongos-02
+  #   ports:
+  #     - 8083:8080
+  #   depends_on:
+  #     - mongos-01
+  #     - mongos-02
+  #     - mongoc-01
+  #     - mongoc-02
+  #     - mongoc-03
+  #     - mongod-01
+  #     - mongod-02
+  #     - mongod-03
+
+volumes:
+  mongodb_cluster_mongos01_db:
+  mongodb_cluster_mongos01_config:
+  
+  mongodb_cluster_mongos02_db:
+  mongodb_cluster_mongos02_config:
+  
+  mongodb_cluster_mongoc01_db:
+  mongodb_cluster_mongoc01_config:
+  
+  mongodb_cluster_mongoc02_db:
+  mongodb_cluster_mongoc02_config:
+  
+  mongodb_cluster_mongoc03_db:
+  mongodb_cluster_mongoc03_config:
+  
+  mongodb_cluster_mongod01_db:
+  mongodb_cluster_mongod01_config:
+  
+  mongodb_cluster_mongod02_db:
+  mongodb_cluster_mongod02_config:
+  
+  mongodb_cluster_mongod03_db:
+  mongodb_cluster_mongod03_config:
